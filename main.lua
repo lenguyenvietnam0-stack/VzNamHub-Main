@@ -1,10 +1,10 @@
 --[[
     ═══════════════════════════════════════════════════════
-    VzNam Hub - Main
+    VzNam Hub-Main (Có Loading Screen)
     ═══════════════════════════════════════════════════════
+    • Màn hình chờ: Tiêu đề "VzNam Hub-Main" + 3 thông tin + Thanh tiến trình (0 -> 10)
     • Đã giữ lại: Trang Chủ, MISC, Cấu Hình
-    • Đã xóa: Toàn bộ tab game & Chức năng Auto Load Script
-    • Tên Hub: VzNam Hub - Main
+    • Tên Hub: VzNam Hub-Main
 ]]
 
 local CoreGui   = game:GetService("CoreGui")
@@ -19,6 +19,7 @@ local localPlayer = Players.LocalPlayer
 local PlayerGui = localPlayer:FindFirstChildOfClass("PlayerGui") or CoreGui
 
 if PlayerGui:FindFirstChild("VzNamHubV4UI") then PlayerGui.VzNamHubV4UI:Destroy() end
+if PlayerGui:FindFirstChild("VzNamHubLoading") then PlayerGui.VzNamHubLoading:Destroy() end
 if SoundService:FindFirstChild("VzNamHubSound") then SoundService.VzNamHubSound:Destroy() end
 
 -- ═════════════════ CONNECTION TRACKING ═════════════════
@@ -82,11 +83,150 @@ MainFrame.BackgroundTransparency = 0.15
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
+MainFrame.Visible = false -- Ẩn đi chờ load xong
 MainFrame.Parent = ScreenGui
 
 Corner(MainFrame, UDim.new(0, 8))
 local OuterStroke = Stroke(MainFrame, Color3.fromRGB(0, 191, 255), 2)
 
+-- ═════════════════ LOADING SCREEN ═════════════════
+local LoadingGui = Instance.new("ScreenGui")
+LoadingGui.Name = "VzNamHubLoading"
+LoadingGui.DisplayOrder = 100000
+LoadingGui.ResetOnSpawn = false
+LoadingGui.Parent = PlayerGui
+
+local LoadFrame = Instance.new("Frame", LoadingGui)
+LoadFrame.Size = UDim2.new(0, 340, 0, 220)
+LoadFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+LoadFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+LoadFrame.BackgroundColor3 = Color3.fromRGB(15, 16, 22)
+LoadFrame.BorderSizePixel = 0
+Corner(LoadFrame, UDim.new(0, 8))
+Stroke(LoadFrame, Color3.fromRGB(0, 191, 255), 2)
+
+local LoadTitle = Instance.new("TextLabel", LoadFrame)
+LoadTitle.Size = UDim2.new(1, 0, 0, 35)
+LoadTitle.Position = UDim2.new(0, 0, 0, 8)
+LoadTitle.BackgroundTransparency = 1
+LoadTitle.Text = "🌸 VzNam Hub-Main 🌸"
+LoadTitle.TextColor3 = Color3.fromRGB(0, 191, 255)
+LoadTitle.TextSize = 13
+LoadTitle.Font = Enum.Font.GothamBold
+LoadTitle.TextXAlignment = Enum.TextXAlignment.Center
+
+local LoadInfoHolder = Instance.new("Frame", LoadFrame)
+LoadInfoHolder.Size = UDim2.new(1, -20, 0, 95)
+LoadInfoHolder.Position = UDim2.new(0, 10, 0, 45)
+LoadInfoHolder.BackgroundTransparency = 1
+local LoadInfoLayout = Instance.new("UIListLayout", LoadInfoHolder)
+LoadInfoLayout.SortOrder = Enum.SortOrder.LayoutOrder
+LoadInfoLayout.Padding = UDim.new(0, 4)
+LoadInfoLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local function CreateLoadCard(parent, order, bgColor, titleText, mainText, borderColor, iconSymbol)
+    local card = Instance.new("Frame", parent)
+    card.LayoutOrder = order
+    card.Size = UDim2.new(1, 0, 0, 27)
+    card.BackgroundColor3 = bgColor
+    card.BorderSizePixel = 0
+    Corner(card)
+    Stroke(card, borderColor, 1)
+
+    local iconCircle = Instance.new("Frame", card)
+    iconCircle.Size = UDim2.new(0, 16, 0, 16)
+    iconCircle.Position = UDim2.new(0, 4, 0.5, -8)
+    iconCircle.BackgroundColor3 = borderColor
+    iconCircle.BorderSizePixel = 0
+    Corner(iconCircle, UDim.new(1, 0))
+    Stroke(iconCircle, borderColor)
+
+    local iconLbl = Instance.new("TextLabel", iconCircle)
+    iconLbl.Size = UDim2.new(1,0,1,0)
+    iconLbl.BackgroundTransparency = 1
+    iconLbl.Text = iconSymbol
+    iconLbl.TextColor3 = Color3.fromRGB(255,255,255)
+    iconLbl.TextSize = 7
+    iconLbl.Font = Enum.Font.GothamBold
+
+    local tLbl = Instance.new("TextLabel", card)
+    tLbl.Size = UDim2.new(1, -30, 0, 10)
+    tLbl.Position = UDim2.new(0, 24, 0, 1)
+    tLbl.BackgroundTransparency = 1
+    tLbl.Text = titleText
+    tLbl.TextColor3 = Color3.fromRGB(255,150,100)
+    tLbl.TextSize = 7
+    tLbl.Font = Enum.Font.GothamBold
+    tLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local mLbl = Instance.new("TextLabel", card)
+    mLbl.Size = UDim2.new(1, -30, 0, 12)
+    mLbl.Position = UDim2.new(0, 24, 0, 12)
+    mLbl.BackgroundTransparency = 1
+    mLbl.Text = mainText
+    mLbl.TextColor3 = Color3.fromRGB(220,220,230)
+    mLbl.TextSize = 7
+    mLbl.Font = Enum.Font.Gotham
+    mLbl.TextXAlignment = Enum.TextXAlignment.Left
+end
+
+CreateLoadCard(LoadInfoHolder, 1, Color3.fromRGB(70,20,45), "ĐƯỢC TẠO BỞI", "VzNam ROBLOX", Color3.fromRGB(180,50,50), "👤")
+CreateLoadCard(LoadInfoHolder, 2, Color3.fromRGB(30,40,70), "DISCORD SERVER", "https://discord.gg/6TG7krbsU", Color3.fromRGB(60,100,200), "💬")
+CreateLoadCard(LoadInfoHolder, 3, Color3.fromRGB(45,45,65), "TIKTOK CHANNEL", "https://www.tiktok.com/@uttop1gl.ovo", Color3.fromRGB(100,100,120), "🎵")
+
+local BarBg = Instance.new("Frame", LoadFrame)
+BarBg.Size = UDim2.new(1, -20, 0, 10)
+BarBg.Position = UDim2.new(0, 10, 1, -40)
+BarBg.BackgroundColor3 = Color3.fromRGB(25,26,35)
+Corner(BarBg, UDim.new(1, 0))
+Stroke(BarBg, Color3.fromRGB(0, 191, 255), 1)
+
+local BarFill = Instance.new("Frame", BarBg)
+BarFill.Size = UDim2.new(0, 0, 1, 0)
+BarFill.BackgroundColor3 = Color3.fromRGB(0, 191, 255)
+Corner(BarFill, UDim.new(1, 0))
+
+local PercentLbl = Instance.new("TextLabel", LoadFrame)
+PercentLbl.Size = UDim2.new(1, 0, 0, 18)
+PercentLbl.Position = UDim2.new(0, 0, 1, -24)
+PercentLbl.BackgroundTransparency = 1
+PercentLbl.Text = "Đang tải: 0/10"
+PercentLbl.TextColor3 = Color3.fromRGB(200,205,215)
+PercentLbl.TextSize = 8
+PercentLbl.Font = Enum.Font.GothamBold
+PercentLbl.TextXAlignment = Enum.TextXAlignment.Center
+
+-- ═════════════════ NÚT MỞ HUB (HIỆN SAU KHI LOAD XONG) ═════════════════
+local OpenButton = Instance.new("TextButton", ScreenGui)
+OpenButton.Size = UDim2.new(0, 40, 0, 40)
+OpenButton.Position = UDim2.new(0, 15, 0.25, 0)
+OpenButton.BackgroundColor3 = Color3.fromRGB(20,22,28)
+OpenButton.BackgroundTransparency = 0
+OpenButton.Text = "🌸"
+OpenButton.TextSize = 20
+OpenButton.Active = true
+OpenButton.Draggable = true
+OpenButton.Visible = false -- Ẩn đi chờ load xong
+Corner(OpenButton, UDim.new(1, 0))
+local OpenStroke = Instance.new("UIStroke", OpenButton)
+OpenStroke.Thickness = 3
+OpenStroke.Color = Color3.fromRGB(0,191,255)
+table.insert(AllUIStrokes, OpenStroke)
+
+-- ═════════════════ TIẾN TRÌNH LOAD 1 -> 10 ═════════════════
+task.spawn(function()
+    for i = 1, 10 do
+        task.wait(0.25)
+        BarFill.Size = UDim2.new(i / 10, 0, 1, 0)
+        PercentLbl.Text = "Đang tải: " .. i .. "/10"
+    end
+    task.wait(0.3)
+    LoadingGui:Destroy()
+    MainFrame.Visible = true
+    OpenButton.Visible = true
+end)
+
+-- ═════════════════ GIAO DIỆN CHÍNH ═════════════════
 local ResizeBtn = Instance.new("TextButton", MainFrame)
 ResizeBtn.Size, ResizeBtn.Position = UDim2.new(0, 18, 0, 18), UDim2.new(1, -18, 1, -18)
 ResizeBtn.BackgroundTransparency, ResizeBtn.Text = 1, "◢"
@@ -133,7 +273,7 @@ LogoIcon.TextSize, LogoIcon.Font = 10, Enum.Font.GothamBold
 
 local Title = Instance.new("TextLabel", TopBar)
 Title.Size, Title.Position = UDim2.new(1, -60, 1, 0), UDim2.new(0, 28, 0, 0)
-Title.BackgroundTransparency, Title.Text = 1, "🌸 VzNam Hub - Main 🌸"
+Title.BackgroundTransparency, Title.Text = 1, "🌸 VzNam Hub-Main 🌸"
 Title.TextColor3, Title.TextSize = Color3.fromRGB(0, 191, 255), 10
 Title.Font, Title.TextXAlignment = Enum.Font.GothamBold, Enum.TextXAlignment.Center
 
@@ -233,6 +373,8 @@ HeaderDivider.Size, HeaderDivider.Position = UDim2.new(1, 0, 0, 1), UDim2.new(0,
 HeaderDivider.BackgroundColor3, HeaderDivider.BorderSizePixel = Color3.fromRGB(0,191,255), 0
 
 local Tabs = {}
+local RegisteredScripts = {}
+local LastSelectedScriptStroke = nil
 
 -- ═════════════════ TAB 0: TRANG CHỦ ═════════════════
 local tabHomeBtn = Instance.new("TextButton", SidebarScroll)
@@ -309,60 +451,6 @@ Track(infoToggleBtn.MouseButton1Click:Connect(function()
     infoToggleBtn.Text = infoContainer.Visible and " ↓ thông tin" or " → thông tin"
     infoSubLabel.Visible = infoContainer.Visible
 end))
-
-local function CreateHomeCard(parent, order, bgColor, titleText, mainText, copyText, borderColor, iconSymbol)
-    local card = Instance.new("Frame", parent)
-    card.LayoutOrder, card.Size = order, UDim2.new(1, 0, 0, 26)
-    card.BackgroundColor3, card.BorderSizePixel = bgColor, 0
-    Corner(card)
-    Stroke(card, borderColor, 1)
-
-    local iconCircle = Instance.new("Frame", card)
-    iconCircle.Size, iconCircle.Position = UDim2.new(0, 16, 0, 16), UDim2.new(0, 4, 0.5, -8)
-    iconCircle.BackgroundColor3, iconCircle.BorderSizePixel = borderColor, 0
-    Corner(iconCircle, UDim.new(1, 0))
-    Stroke(iconCircle, borderColor)
-
-    local iconLbl = Instance.new("TextLabel", iconCircle)
-    iconLbl.Size, iconLbl.BackgroundTransparency = UDim2.new(1,0,1,0), 1
-    iconLbl.Text, iconLbl.TextColor3 = iconSymbol, Color3.fromRGB(255,255,255)
-    iconLbl.TextSize, iconLbl.Font = 7, Enum.Font.GothamBold
-
-    local tLbl = Instance.new("TextLabel", card)
-    tLbl.Size, tLbl.Position = UDim2.new(1, -70, 0, 10), UDim2.new(0, 24, 0, 1)
-    tLbl.BackgroundTransparency, tLbl.Text = 1, titleText
-    tLbl.TextColor3, tLbl.TextSize = Color3.fromRGB(255,150,100), 7
-    tLbl.Font, tLbl.TextXAlignment = Enum.Font.GothamBold, Enum.TextXAlignment.Left
-
-    local mLbl = Instance.new("TextLabel", card)
-    mLbl.Size, mLbl.Position = UDim2.new(1, -70, 0, 12), UDim2.new(0, 24, 0, 12)
-    mLbl.BackgroundTransparency, mLbl.Text = 1, mainText
-    mLbl.TextColor3, mLbl.TextSize = Color3.fromRGB(220,220,230), 7
-    mLbl.Font, mLbl.TextXAlignment = Enum.Font.Gotham, Enum.TextXAlignment.Left
-
-    if copyText ~= "" then
-        local copyBtn = Instance.new("TextButton", card)
-        copyBtn.Size, copyBtn.Position = UDim2.new(0, 42, 0, 16), UDim2.new(1, -44, 0.5, -8)
-        copyBtn.BackgroundTransparency, copyBtn.Text = 1, "📋 COPY"
-        copyBtn.TextColor3, copyBtn.TextSize = Color3.fromRGB(200,200,210), 7
-        copyBtn.Font = Enum.Font.GothamBold
-
-        local function doCopy()
-            if typeof(setclipboard) == "function" then
-                pcall(setclipboard, copyText)
-                copyBtn.Text = "✓ COPIED"
-                task.delay(1.5, function()
-                    if copyBtn.Parent then copyBtn.Text = "📋 COPY" end
-                end)
-            end
-        end
-        Track(copyBtn.MouseButton1Click:Connect(doCopy))
-        Track(card.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1
-               or input.UserInputType == Enum.UserInputType.Touch then doCopy() end
-        end))
-    end
-end
 
 CreateHomeCard(infoContainer, 1, Color3.fromRGB(70,20,45), "ĐƯỢC TẠO BỞI", "VzNam ROBLOX", "", Color3.fromRGB(180,50,50), "👤")
 CreateHomeCard(infoContainer, 2, Color3.fromRGB(30,40,70), "DISCORD SERVER",
@@ -1235,24 +1323,12 @@ Track(saveBtn.MouseButton1Click:Connect(function()
     end
 end))
 
--- ═════════════════ NÚT MỞ HUB ═════════════════
-local OpenButton = Instance.new("TextButton", ScreenGui)
-OpenButton.Size, OpenButton.Position = UDim2.new(0, 40, 0, 40), UDim2.new(0, 15, 0.25, 0)
-OpenButton.BackgroundColor3, OpenButton.BackgroundTransparency = Color3.fromRGB(20,22,28), 0
-OpenButton.Text, OpenButton.TextSize = "🌸", 20
-OpenButton.Active, OpenButton.Draggable = true, true
-Corner(OpenButton, UDim.new(1, 0))
-local OpenStroke = Instance.new("UIStroke", OpenButton)
-OpenStroke.Thickness, OpenStroke.Color = 3, Color3.fromRGB(0,191,255)
-table.insert(AllUIStrokes, OpenStroke)
-
 Track(OpenButton.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end))
 
--- ═════════════════ KHỞI TẠO ═════════════════
 ApplyTheme(Color3.fromRGB(15, 16, 22))
 UpdateAllStrokes(Color3.fromRGB(0, 191, 255))
 RefreshStartupLabel()
 
-print("[VzNam Hub - Main] ✅ Loaded. Config folder: " .. CONFIG_FOLDER)
+print("[VzNam Hub-Main] ✅ Loaded. Config folder: " .. CONFIG_FOLDER)
