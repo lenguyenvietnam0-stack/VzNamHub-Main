@@ -1,9 +1,9 @@
 --[[
     ═══════════════════════════════════════════════════════
-    VzNam Hub-Main (Đã fix sạch lỗi dư tab)
+    VzNam Hub-Main (Đã tích hợp Farm phong cách Chilli Hub)
     ═══════════════════════════════════════════════════════
     • Màn hình chờ: Tiêu đề "VzNam Hub-Main" + 3 thông tin + Thanh tiến trình (0 -> 10)
-    • Chỉ còn lại: Trang Chủ, MISC, Cấu Hình
+    • Các tab: Trang Chủ, Farm (Auto Train, Auto Steal, v.v.), MISC, Cấu Hình
 ]]
 
 local CoreGui   = game:GetService("CoreGui")
@@ -513,9 +513,127 @@ CreateHomeCard(infoContainer, 3, Color3.fromRGB(45,45,65), "TIKTOK CHANNEL",
     "https://www.tiktok.com/@uttop1gl.ovo?_r=1&_t=ZS-9AWatTQR08y",
     Color3.fromRGB(100,100,120), "🎵")
 
+-- ═════════════════ TAB 1: FARM (CHILLI HUB STYLE) ═════════════════
+local tabFarmBtn = Instance.new("TextButton", SidebarScroll)
+tabFarmBtn.LayoutOrder = 1
+tabFarmBtn.Size, tabFarmBtn.BackgroundColor3 = UDim2.new(1, 0, 0, 26), Color3.fromRGB(70,15,50)
+tabFarmBtn.BackgroundTransparency, tabFarmBtn.Text = 0, " 🌾 Farm"
+tabFarmBtn.TextColor3, tabFarmBtn.TextSize = Color3.fromRGB(255,255,255), 8
+tabFarmBtn.Font, tabFarmBtn.TextXAlignment = Enum.Font.Gotham, Enum.TextXAlignment.Left
+Corner(tabFarmBtn)
+RegTheme(tabFarmBtn, "Primary")
+
+local farmIndicator = Instance.new("Frame", tabFarmBtn)
+farmIndicator.Size, farmIndicator.Position = UDim2.new(0, 3, 0, 12), UDim2.new(0, 0, 0.5, -6)
+farmIndicator.BackgroundColor3, farmIndicator.BorderSizePixel = Color3.fromRGB(255,105,180), 0
+farmIndicator.Visible = false
+Corner(farmIndicator, UDim.new(0, 2))
+
+local farmScroll = Instance.new("ScrollingFrame", ContentContainer)
+farmScroll.Size, farmScroll.Position = UDim2.new(1, -12, 1, -29), UDim2.new(0, 6, 0, 28)
+farmScroll.BackgroundTransparency, farmScroll.BorderSizePixel = 1, 0
+farmScroll.ScrollBarThickness, farmScroll.Visible, farmScroll.ClipsDescendants = 3, false, true
+local farmLayout = Instance.new("UIListLayout", farmScroll)
+farmLayout.SortOrder, farmLayout.Padding = Enum.SortOrder.LayoutOrder, UDim.new(0, 5)
+farmLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local farmPad = Instance.new("UIPadding", farmScroll)
+farmPad.PaddingLeft, farmPad.PaddingRight, farmPad.PaddingTop = UDim.new(0,4), UDim.new(0,10), UDim.new(0,4)
+
+Track(farmLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    farmScroll.CanvasSize = UDim2.new(0, 0, 0, farmLayout.AbsoluteContentSize.Y + 15)
+end))
+
+Track(tabFarmBtn.MouseButton1Click:Connect(function()
+    for _, t in pairs(Tabs) do
+        t.Container.Visible = false
+        if t.Indicator then t.Indicator.Visible = false end
+    end
+    farmScroll.Visible, farmIndicator.Visible = true, true
+    ActiveTabTitle.Text = "🌾 Farm"
+end))
+table.insert(Tabs, {Container = farmScroll, Indicator = farmIndicator})
+
+local function CreateFarmToggle(parent, order, titleText, subText, callback)
+    local card = Instance.new("Frame", parent)
+    card.LayoutOrder = order
+    card.Size = UDim2.new(1, 0, 0, 32)
+    card.BackgroundColor3 = Color3.fromRGB(70,15,50)
+    card.BorderSizePixel = 0
+    Corner(card)
+    Stroke(card, Color3.fromRGB(0, 191, 255), 1)
+    RegTheme(card, "Primary")
+
+    local tLbl = Instance.new("TextLabel", card)
+    tLbl.Size = UDim2.new(1, -40, 0, 15)
+    tLbl.Position = UDim2.new(0, 6, 0, 1)
+    tLbl.BackgroundTransparency = 1
+    tLbl.Text = titleText
+    tLbl.TextColor3 = Color3.fromRGB(255,255,255)
+    tLbl.TextSize = 8
+    tLbl.Font = Enum.Font.GothamBold
+    tLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local sLbl = Instance.new("TextLabel", card)
+    sLbl.Size = UDim2.new(1, -40, 0, 12)
+    sLbl.Position = UDim2.new(0, 6, 0, 16)
+    sLbl.BackgroundTransparency = 1
+    sLbl.Text = subText
+    sLbl.TextColor3 = Color3.fromRGB(150,150,160)
+    sLbl.TextSize = 7
+    sLbl.Font = Enum.Font.Gotham
+    sLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local toggleBtn = Instance.new("TextButton", card)
+    toggleBtn.Size = UDim2.new(0, 26, 0, 14)
+    toggleBtn.Position = UDim2.new(1, -30, 0.5, -7)
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(60,65,75)
+    toggleBtn.Text = ""
+    Corner(toggleBtn, UDim.new(1, 0))
+    Stroke(toggleBtn)
+
+    local dot = Instance.new("Frame", toggleBtn)
+    dot.Size = UDim2.new(0, 10, 0, 10)
+    dot.Position = UDim2.new(0, 2, 0.5, -5)
+    dot.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    Corner(dot, UDim.new(1, 0))
+
+    local active = false
+    Track(toggleBtn.MouseButton1Click:Connect(function()
+        active = not active
+        if active then
+            toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            dot.Position = UDim2.new(1, -12, 0.5, -5)
+        else
+            toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 65, 75)
+            dot.Position = UDim2.new(0, 2, 0.5, -5)
+        end
+        if callback then pcall(callback, active) end
+    end))
+end
+
+CreateFarmToggle(farmScroll, 1, "⚡ Auto Train Treadmill", "Tự động chạy máy tập tăng tốc độ", function(v)
+    print("[Farm] Auto Train Treadmill:", v)
+end)
+
+CreateFarmToggle(farmScroll, 2, "🥚 Auto Steal Eggs", "Tự động trộm trứng từ tổ", function(v)
+    print("[Farm] Auto Steal Eggs:", v)
+end)
+
+CreateFarmToggle(farmScroll, 3, "🚀 Instant Steal", "Trộm trứng siêu tốc / lập tức", function(v)
+    print("[Farm] Instant Steal:", v)
+end)
+
+CreateFarmToggle(farmScroll, 4, "🐣 Auto Hatch Eggs", "Tự động ấp trứng trong lồng", function(v)
+    print("[Farm] Auto Hatch Eggs:", v)
+end)
+
+CreateFarmToggle(farmScroll, 5, "💰 Auto Sell Pets", "Tự động bán pet giá trị thấp", function(v)
+    print("[Farm] Auto Sell Pets:", v)
+end)
+
 -- ═════════════════ TAB: MISC ═════════════════
 local tabMiscBtn = Instance.new("TextButton", SidebarScroll)
-tabMiscBtn.LayoutOrder = 1
+tabMiscBtn.LayoutOrder = 2
 tabMiscBtn.Size, tabMiscBtn.BackgroundColor3 = UDim2.new(1, 0, 0, 26), Color3.fromRGB(70,15,50)
 tabMiscBtn.BackgroundTransparency, tabMiscBtn.Text = 0, " ⚙️ MISC"
 tabMiscBtn.TextColor3, tabMiscBtn.TextSize = Color3.fromRGB(255,255,255), 8
@@ -981,7 +1099,7 @@ Track(rainbowConn)
 
 -- ═════════════════ TAB: CẤU HÌNH ═════════════════
 local tabConfigBtn = Instance.new("TextButton", SidebarScroll)
-tabConfigBtn.LayoutOrder = 2
+tabConfigBtn.LayoutOrder = 3
 tabConfigBtn.Size, tabConfigBtn.BackgroundColor3 = UDim2.new(1, 0, 0, 26), Color3.fromRGB(70,15,50)
 tabConfigBtn.BackgroundTransparency, tabConfigBtn.Text = 0, " 📦 CẤU HÌNH"
 tabConfigBtn.TextColor3, tabConfigBtn.TextSize = Color3.fromRGB(255,255,255), 8
