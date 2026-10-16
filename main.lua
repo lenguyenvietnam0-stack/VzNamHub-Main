@@ -3,7 +3,7 @@
     VzNam Hub - Main
     ═══════════════════════════════════════════════════════
     • Đã giữ lại: Trang Chủ, MISC, Cấu Hình
-    • Đã xóa: Toàn bộ tab game (Steal An Egg, Blox Fruit, v.v.)
+    • Đã xóa: Toàn bộ tab game & Chức năng Auto Load Script
     • Tên Hub: VzNam Hub - Main
 ]]
 
@@ -39,8 +39,6 @@ local State = {
     StrokeColor    = Color3.fromRGB(0, 191, 255),
     Volume         = 0.5,
     SoundId        = "1837879082",
-    SelectedScript = nil,
-    IsAutoLoad     = false,
     CurrentConfig  = "Default",
     Transparent    = 0,
 }
@@ -66,40 +64,6 @@ local ThemedElements = {}
 local function RegTheme(el, t)
     table.insert(ThemedElements, {Element = el, Type = t})
     return el
-end
-
--- ═════════════════ SAFE LOAD ═════════════════
-local ALLOWED_HOSTS = {
-    "raw.githubusercontent.com",
-    "gist.githubusercontent.com",
-    "github.com",
-    "api.luarmor.net",
-    "fyycommunity.my.id",
-    "id.tomroblox.com",
-}
-local function IsUrlAllowed(url)
-    if typeof(url) ~= "string" then return false end
-    local host = string.match(url, "^https?://([^/]+)")
-    if not host then return false end
-    host = host:lower()
-    for _, h in ipairs(ALLOWED_HOSTS) do
-        if host == h or host:sub(-(#h + 1)) == "." .. h then return true end
-    end
-    return false
-end
-
-local function SafeLoad(url)
-    if not IsUrlAllowed(url) then
-        warn("[VzNam] Blocked domain: " .. tostring(url))
-        return false
-    end
-    local ok, source = pcall(function() return game:HttpGet(url, true) end)
-    if not ok or not source then return false end
-    local ok2, fn = pcall(loadstring, source)
-    if not ok2 or not fn then return false end
-    local ok3, err = pcall(fn)
-    if not ok3 then warn("[VzNam] Runtime error: " .. tostring(err)) end
-    return ok3
 end
 
 -- ═════════════════ ROOT UI ═════════════════
@@ -269,8 +233,6 @@ HeaderDivider.Size, HeaderDivider.Position = UDim2.new(1, 0, 0, 1), UDim2.new(0,
 HeaderDivider.BackgroundColor3, HeaderDivider.BorderSizePixel = Color3.fromRGB(0,191,255), 0
 
 local Tabs = {}
-local RegisteredScripts = {}
-local LastSelectedScriptStroke = nil
 
 -- ═════════════════ TAB 0: TRANG CHỦ ═════════════════
 local tabHomeBtn = Instance.new("TextButton", SidebarScroll)
@@ -452,137 +414,9 @@ Track(tabMiscBtn.MouseButton1Click:Connect(function()
 end))
 table.insert(Tabs, {Container = miscScroll, Indicator = miscIndicator})
 
--- ═════════════════ AUTO LOAD SCRIPT ═════════════════
-local autoLoadToggleBtn = Instance.new("TextButton", miscScroll)
-autoLoadToggleBtn.LayoutOrder = 1
-autoLoadToggleBtn.Size, autoLoadToggleBtn.BackgroundColor3 = UDim2.new(1, 0, 0, 34), Color3.fromRGB(55,12,40)
-autoLoadToggleBtn.BackgroundTransparency, autoLoadToggleBtn.Text = 0, " ↓ auto load script"
-autoLoadToggleBtn.TextColor3, autoLoadToggleBtn.TextSize = Color3.fromRGB(255,255,255), 10
-autoLoadToggleBtn.Font, autoLoadToggleBtn.TextXAlignment = Enum.Font.GothamBold, Enum.TextXAlignment.Center
-Corner(autoLoadToggleBtn)
-Stroke(autoLoadToggleBtn)
-RegTheme(autoLoadToggleBtn, "Secondary")
-
-local alSubLabel = Instance.new("TextLabel", autoLoadToggleBtn)
-alSubLabel.Size, alSubLabel.Position = UDim2.new(1, 0, 0, 14), UDim2.new(0, 0, 1, -14)
-alSubLabel.BackgroundTransparency, alSubLabel.Text = 1, "Quản lý auto load script"
-alSubLabel.TextColor3, alSubLabel.TextSize = Color3.fromRGB(140,140,150), 7
-alSubLabel.Font, alSubLabel.TextXAlignment = Enum.Font.Gotham, Enum.TextXAlignment.Center
-
-local autoLoadContainer = Instance.new("Frame", miscScroll)
-autoLoadContainer.LayoutOrder = 2
-autoLoadContainer.Size, autoLoadContainer.AutomaticSize = UDim2.new(1, 0, 0, 0), Enum.AutomaticSize.Y
-autoLoadContainer.BackgroundTransparency = 1
-autoLoadContainer.Visible = true
-local alLayout = Instance.new("UIListLayout", autoLoadContainer)
-alLayout.SortOrder, alLayout.Padding = Enum.SortOrder.LayoutOrder, UDim.new(0, 4)
-alLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-Track(autoLoadToggleBtn.MouseButton1Click:Connect(function()
-    autoLoadContainer.Visible = not autoLoadContainer.Visible
-    autoLoadToggleBtn.Text = autoLoadContainer.Visible and " ↓ auto load script" or " → auto load script"
-    alSubLabel.Visible = autoLoadContainer.Visible
-end))
-
-local dropBtn = Instance.new("TextButton", autoLoadContainer)
-dropBtn.LayoutOrder, dropBtn.Size = 1, UDim2.new(1, 0, 0, 26)
-dropBtn.BackgroundColor3, dropBtn.BackgroundTransparency = Color3.fromRGB(70,15,50), 0
-dropBtn.Text = " 📜 Chọn Script Auto Load..."
-dropBtn.TextColor3, dropBtn.TextSize = Color3.fromRGB(255,255,255), 9
-dropBtn.Font, dropBtn.TextXAlignment = Enum.Font.Gotham, Enum.TextXAlignment.Left
-Corner(dropBtn)
-Stroke(dropBtn)
-RegTheme(dropBtn, "Primary")
-
-local dropFrame = Instance.new("ScrollingFrame", autoLoadContainer)
-dropFrame.LayoutOrder = 2
-dropFrame.Size, dropFrame.BackgroundColor3 = UDim2.new(1, 0, 0, 90), Color3.fromRGB(80,20,60)
-dropFrame.BackgroundTransparency, dropFrame.CanvasSize = 0, UDim2.new(0,0,0,0)
-dropFrame.ScrollBarThickness, dropFrame.Visible = 3, false
-Corner(dropFrame)
-Stroke(dropFrame)
-local dropLayout = Instance.new("UIListLayout", dropFrame)
-dropLayout.Padding = UDim.new(0, 3)
-RegTheme(dropFrame, "DropFrame")
-local dropPad = Instance.new("UIPadding", dropFrame)
-dropPad.PaddingRight = UDim.new(0, 8)
-
-Track(dropBtn.MouseButton1Click:Connect(function()
-    dropFrame.Visible = not dropFrame.Visible
-end))
-
-local function rebuildScriptDropdown()
-    for _, c in ipairs(dropFrame:GetChildren()) do
-        if c:IsA("TextButton") then c:Destroy() end
-    end
-    for i, scr in ipairs(RegisteredScripts) do
-        local item = Instance.new("TextButton", dropFrame)
-        item.LayoutOrder, item.Size = i, UDim2.new(1, 0, 0, 22)
-        item.BackgroundColor3, item.BackgroundTransparency = Color3.fromRGB(90,25,65), 0
-        item.Text, item.TextColor3, item.TextSize = " ▶ " .. scr.Name, Color3.fromRGB(255,255,255), 9
-        item.Font, item.TextXAlignment = Enum.Font.Gotham, Enum.TextXAlignment.Left
-        Corner(item, UDim.new(0, 4))
-        Stroke(item)
-        RegTheme(item, "DropItem")
-        Track(item.MouseButton1Click:Connect(function()
-            State.SelectedScript = scr
-            dropBtn.Text = " 📜 " .. scr.Name
-            dropFrame.Visible = false
-            if State.IsAutoLoad then pcall(scr.Callback) end
-        end))
-    end
-    dropFrame.CanvasSize = UDim2.new(0, 0, 0, #RegisteredScripts * 25)
-end
-_G.__vznam_rebuildScriptDropdown = rebuildScriptDropdown
-rebuildScriptDropdown()
-
-local autoLoadScriptFrame = Instance.new("Frame", autoLoadContainer)
-autoLoadScriptFrame.LayoutOrder, autoLoadScriptFrame.Size = 3, UDim2.new(1, 0, 0, 30)
-autoLoadScriptFrame.BackgroundColor3, autoLoadScriptFrame.BackgroundTransparency = Color3.fromRGB(70,15,50), 0
-Corner(autoLoadScriptFrame)
-Stroke(autoLoadScriptFrame)
-RegTheme(autoLoadScriptFrame, "Primary")
-
-local alsTitle = Instance.new("TextLabel", autoLoadScriptFrame)
-alsTitle.Size, alsTitle.Position = UDim2.new(1, -40, 1, 0), UDim2.new(0, 5, 0, 0)
-alsTitle.BackgroundTransparency, alsTitle.Text = 1, "Auto Load Script Chạy"
-alsTitle.TextColor3, alsTitle.TextSize = Color3.fromRGB(255,255,255), 9
-alsTitle.Font, alsTitle.TextXAlignment = Enum.Font.GothamBold, Enum.TextXAlignment.Left
-
-local toggleAutoBtn = Instance.new("TextButton", autoLoadScriptFrame)
-toggleAutoBtn.Size, toggleAutoBtn.Position = UDim2.new(0, 30, 0, 15), UDim2.new(1, -34, 0.5, -7.5)
-toggleAutoBtn.BackgroundColor3, toggleAutoBtn.Text = Color3.fromRGB(60,65,75), ""
-Corner(toggleAutoBtn, UDim.new(1, 0))
-Stroke(toggleAutoBtn)
-local autoDot = Instance.new("Frame", toggleAutoBtn)
-autoDot.Size, autoDot.Position = UDim2.new(0, 11, 0, 11), UDim2.new(0, 2, 0.5, -5.5)
-autoDot.BackgroundColor3 = Color3.fromRGB(255,255,255)
-Corner(autoDot, UDim.new(1, 0))
-
-Track(toggleAutoBtn.MouseButton1Click:Connect(function()
-    if not State.SelectedScript then
-        dropBtn.Text = " ⚠️ Chọn script trước!"
-        task.delay(1.5, function()
-            if dropBtn.Parent then
-                dropBtn.Text = " 📜 Chọn Script Auto Load..."
-            end
-        end)
-        return
-    end
-    State.IsAutoLoad = not State.IsAutoLoad
-    if State.IsAutoLoad then
-        toggleAutoBtn.BackgroundColor3 = Color3.fromRGB(50,200,50)
-        autoDot.Position = UDim2.new(1, -13, 0.5, -5.5)
-        pcall(State.SelectedScript.Callback)
-    else
-        toggleAutoBtn.BackgroundColor3 = Color3.fromRGB(60,65,75)
-        autoDot.Position = UDim2.new(0, 2, 0.5, -5.5)
-    end
-end))
-
 -- ═════════════════ ÂM NHẠC ═════════════════
 local musicToggleBtn = Instance.new("TextButton", miscScroll)
-musicToggleBtn.LayoutOrder = 3
+musicToggleBtn.LayoutOrder = 1
 musicToggleBtn.Size, musicToggleBtn.BackgroundColor3 = UDim2.new(1, 0, 0, 34), Color3.fromRGB(55,12,40)
 musicToggleBtn.BackgroundTransparency, musicToggleBtn.Text = 0, " ↓ âm nhạc"
 musicToggleBtn.TextColor3, musicToggleBtn.TextSize = Color3.fromRGB(255,255,255), 10
@@ -598,7 +432,7 @@ muSubLabel.TextColor3, muSubLabel.TextSize = Color3.fromRGB(140,140,150), 7
 muSubLabel.Font, muSubLabel.TextXAlignment = Enum.Font.Gotham, Enum.TextXAlignment.Center
 
 local musicContainer = Instance.new("Frame", miscScroll)
-musicContainer.LayoutOrder, musicContainer.Size = 4, UDim2.new(1, 0, 0, 0)
+musicContainer.LayoutOrder, musicContainer.Size = 2, UDim2.new(1, 0, 0, 0)
 musicContainer.AutomaticSize, musicContainer.BackgroundTransparency = Enum.AutomaticSize.Y, 1
 musicContainer.Visible = true
 local muLayout = Instance.new("UIListLayout", musicContainer)
@@ -769,7 +603,7 @@ end))
 
 -- ═════════════════ MÀU MENU ═════════════════
 local menuColorToggleBtn = Instance.new("TextButton", miscScroll)
-menuColorToggleBtn.LayoutOrder = 5
+menuColorToggleBtn.LayoutOrder = 3
 menuColorToggleBtn.Size, menuColorToggleBtn.BackgroundColor3 = UDim2.new(1, 0, 0, 34), Color3.fromRGB(55,12,40)
 menuColorToggleBtn.BackgroundTransparency, menuColorToggleBtn.Text = 0, " ↓ màu menu"
 menuColorToggleBtn.TextColor3, menuColorToggleBtn.TextSize = Color3.fromRGB(255,255,255), 10
@@ -785,7 +619,7 @@ mcSubLabel.TextColor3, mcSubLabel.TextSize = Color3.fromRGB(140,140,150), 7
 mcSubLabel.Font, mcSubLabel.TextXAlignment = Enum.Font.Gotham, Enum.TextXAlignment.Center
 
 local menuColorContainer = Instance.new("Frame", miscScroll)
-menuColorContainer.LayoutOrder, menuColorContainer.Size = 6, UDim2.new(1, 0, 0, 0)
+menuColorContainer.LayoutOrder, menuColorContainer.Size = 4, UDim2.new(1, 0, 0, 0)
 menuColorContainer.AutomaticSize, menuColorContainer.BackgroundTransparency = Enum.AutomaticSize.Y, 1
 menuColorContainer.Visible = true
 local mcLayout = Instance.new("UIListLayout", menuColorContainer)
@@ -1049,7 +883,7 @@ table.insert(Tabs, {Container = configScroll, Indicator = configIndicator})
 local CONFIG_FOLDER = "VzNamHub_Configs"
 if typeof(makefolder) == "function" then pcall(makefolder, CONFIG_FOLDER) end
 
-local function SerializeState(scriptName)
+local function SerializeState()
     return {
         Version        = 4,
         SavedTime      = os.time(),
@@ -1058,7 +892,6 @@ local function SerializeState(scriptName)
         StrokeColor    = {State.StrokeColor.R, State.StrokeColor.G, State.StrokeColor.B},
         Volume         = State.Volume,
         SoundId        = State.SoundId,
-        SelectedScript = scriptName,
         Transparent    = State.Transparent,
     }
 end
@@ -1074,10 +907,9 @@ end
 
 local function SaveConfig(name)
     if typeof(writefile) ~= "function" then return false end
-    local scriptName = State.SelectedScript and State.SelectedScript.Name or nil
     local ok = pcall(writefile,
         CONFIG_FOLDER .. "/" .. name .. ".json",
-        HttpService:JSONEncode(SerializeState(scriptName)))
+        HttpService:JSONEncode(SerializeState()))
     return ok
 end
 
@@ -1299,15 +1131,6 @@ local function ApplyConfig(data)
         SidebarPanel.BackgroundTransparency = State.Transparent
         ContentContainer.BackgroundTransparency = State.Transparent
         transLabel.Text = "✨ Trong suốt: " .. math.floor(State.Transparent * 100) .. "%"
-    end
-    if data.SelectedScript then
-        for _, scr in ipairs(RegisteredScripts) do
-            if scr.Name == data.SelectedScript then
-                State.SelectedScript = scr
-                dropBtn.Text = " 📜 " .. scr.Name
-                break
-            end
-        end
     end
 end
 
