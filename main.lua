@@ -1,10 +1,9 @@
 --[[
     ═══════════════════════════════════════════════════════
-    VzNam Hub-Main (Có Loading Screen)
+    VzNam Hub-Main (Đã fix sạch lỗi dư tab)
     ═══════════════════════════════════════════════════════
     • Màn hình chờ: Tiêu đề "VzNam Hub-Main" + 3 thông tin + Thanh tiến trình (0 -> 10)
-    • Đã giữ lại: Trang Chủ, MISC, Cấu Hình
-    • Tên Hub: VzNam Hub-Main
+    • Chỉ còn lại: Trang Chủ, MISC, Cấu Hình
 ]]
 
 local CoreGui   = game:GetService("CoreGui")
@@ -206,7 +205,7 @@ OpenButton.Text = "🌸"
 OpenButton.TextSize = 20
 OpenButton.Active = true
 OpenButton.Draggable = true
-OpenButton.Visible = false -- Ẩn đi chờ load xong
+OpenButton.Visible = false
 Corner(OpenButton, UDim.new(1, 0))
 local OpenStroke = Instance.new("UIStroke", OpenButton)
 OpenStroke.Thickness = 3
@@ -373,8 +372,6 @@ HeaderDivider.Size, HeaderDivider.Position = UDim2.new(1, 0, 0, 1), UDim2.new(0,
 HeaderDivider.BackgroundColor3, HeaderDivider.BorderSizePixel = Color3.fromRGB(0,191,255), 0
 
 local Tabs = {}
-local RegisteredScripts = {}
-local LastSelectedScriptStroke = nil
 
 -- ═════════════════ TAB 0: TRANG CHỦ ═════════════════
 local tabHomeBtn = Instance.new("TextButton", SidebarScroll)
@@ -451,6 +448,60 @@ Track(infoToggleBtn.MouseButton1Click:Connect(function()
     infoToggleBtn.Text = infoContainer.Visible and " ↓ thông tin" or " → thông tin"
     infoSubLabel.Visible = infoContainer.Visible
 end))
+
+local function CreateHomeCard(parent, order, bgColor, titleText, mainText, copyText, borderColor, iconSymbol)
+    local card = Instance.new("Frame", parent)
+    card.LayoutOrder, card.Size = order, UDim2.new(1, 0, 0, 26)
+    card.BackgroundColor3, card.BorderSizePixel = bgColor, 0
+    Corner(card)
+    Stroke(card, borderColor, 1)
+
+    local iconCircle = Instance.new("Frame", card)
+    iconCircle.Size, iconCircle.Position = UDim2.new(0, 16, 0, 16), UDim2.new(0, 4, 0.5, -8)
+    iconCircle.BackgroundColor3, iconCircle.BorderSizePixel = borderColor, 0
+    Corner(iconCircle, UDim.new(1, 0))
+    Stroke(iconCircle, borderColor)
+
+    local iconLbl = Instance.new("TextLabel", iconCircle)
+    iconLbl.Size, iconLbl.BackgroundTransparency = UDim2.new(1,0,1,0), 1
+    iconLbl.Text, iconLbl.TextColor3 = iconSymbol, Color3.fromRGB(255,255,255)
+    iconLbl.TextSize, iconLbl.Font = 7, Enum.Font.GothamBold
+
+    local tLbl = Instance.new("TextLabel", card)
+    tLbl.Size, tLbl.Position = UDim2.new(1, -70, 0, 10), UDim2.new(0, 24, 0, 1)
+    tLbl.BackgroundTransparency, tLbl.Text = 1, titleText
+    tLbl.TextColor3, tLbl.TextSize = Color3.fromRGB(255,150,100), 7
+    tLbl.Font, tLbl.TextXAlignment = Enum.Font.GothamBold, Enum.TextXAlignment.Left
+
+    local mLbl = Instance.new("TextLabel", card)
+    mLbl.Size, mLbl.Position = UDim2.new(1, -70, 0, 12), UDim2.new(0, 24, 0, 12)
+    mLbl.BackgroundTransparency, mLbl.Text = 1, mainText
+    mLbl.TextColor3, mLbl.TextSize = Color3.fromRGB(220,220,230), 7
+    mLbl.Font, mLbl.TextXAlignment = Enum.Font.Gotham, Enum.TextXAlignment.Left
+
+    if copyText ~= "" then
+        local copyBtn = Instance.new("TextButton", card)
+        copyBtn.Size, copyBtn.Position = UDim2.new(0, 42, 0, 16), UDim2.new(1, -44, 0.5, -8)
+        copyBtn.BackgroundTransparency, copyBtn.Text = 1, "📋 COPY"
+        copyBtn.TextColor3, copyBtn.TextSize = Color3.fromRGB(200,200,210), 7
+        copyBtn.Font = Enum.Font.GothamBold
+
+        local function doCopy()
+            if typeof(setclipboard) == "function" then
+                pcall(setclipboard, copyText)
+                copyBtn.Text = "✓ COPIED"
+                task.delay(1.5, function()
+                    if copyBtn.Parent then copyBtn.Text = "📋 COPY" end
+                end)
+            end
+        end
+        Track(copyBtn.MouseButton1Click:Connect(doCopy))
+        Track(card.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+               or input.UserInputType == Enum.UserInputType.Touch then doCopy() end
+        end))
+    end
+end
 
 CreateHomeCard(infoContainer, 1, Color3.fromRGB(70,20,45), "ĐƯỢC TẠO BỞI", "VzNam ROBLOX", "", Color3.fromRGB(180,50,50), "👤")
 CreateHomeCard(infoContainer, 2, Color3.fromRGB(30,40,70), "DISCORD SERVER",
