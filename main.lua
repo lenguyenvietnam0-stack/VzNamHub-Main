@@ -1,9 +1,9 @@
 --[[
     ═══════════════════════════════════════════════════════
-    VzNam Hub-Main (Đã tích hợp Farm phong cách Chilli Hub)
+    VzNam Hub-Main (Đã cập nhật Tab Farm & Tính năng Trộm Trứng)
     ═══════════════════════════════════════════════════════
     • Màn hình chờ: Tiêu đề "VzNam Hub-Main" + 3 thông tin + Thanh tiến trình (0 -> 10)
-    • Các tab: Trang Chủ, Farm (Auto Train, Auto Steal, v.v.), MISC, Cấu Hình
+    • Các tab: Trang Chủ, Farm, MISC, Cấu Hình
 ]]
 
 local CoreGui   = game:GetService("CoreGui")
@@ -41,6 +41,23 @@ local State = {
     SoundId        = "1837879082",
     CurrentConfig  = "Default",
     Transparent    = 0,
+    -- Farm / Egg Steal States
+    AutoStealEggs       = false,
+    SuperSteal          = false,
+    SuperStealSteps     = 2,
+    FastDelivery        = false,
+    SuperStealV2        = false,
+    TargetArea          = "12 đã chọn",
+    MinRarity           = "Tất cả",
+    MinEggValue         = false,
+    TargetEgg           = "Tất cả",
+    StealMissingLabEggs = false,
+    StealMissingBookEggs= false,
+    StealPriority       = "Giá trị cao nhất",
+    TweenFlySpeed       = 120,
+    EggCarrySpeed       = 100,
+    DropEggsSafeZone    = false,
+    AntiGuardPanel      = false,
 }
 
 -- ═════════════════ UI HELPERS ═════════════════
@@ -513,7 +530,7 @@ CreateHomeCard(infoContainer, 3, Color3.fromRGB(45,45,65), "TIKTOK CHANNEL",
     "https://www.tiktok.com/@uttop1gl.ovo?_r=1&_t=ZS-9AWatTQR08y",
     Color3.fromRGB(100,100,120), "🎵")
 
--- ═════════════════ TAB 1: FARM (CHILLI HUB STYLE) ═════════════════
+-- ═════════════════ TAB 1: FARM (ĐÃ THÊM CÁC TÍNH NĂNG TRỘM TRỨNG) ═════════════════
 local tabFarmBtn = Instance.new("TextButton", SidebarScroll)
 tabFarmBtn.LayoutOrder = 1
 tabFarmBtn.Size, tabFarmBtn.BackgroundColor3 = UDim2.new(1, 0, 0, 26), Color3.fromRGB(70,15,50)
@@ -553,83 +570,245 @@ Track(tabFarmBtn.MouseButton1Click:Connect(function()
 end))
 table.insert(Tabs, {Container = farmScroll, Indicator = farmIndicator})
 
-local function CreateFarmToggle(parent, order, titleText, subText, callback)
-    local card = Instance.new("Frame", parent)
-    card.LayoutOrder = order
-    card.Size = UDim2.new(1, 0, 0, 32)
-    card.BackgroundColor3 = Color3.fromRGB(70,15,50)
-    card.BorderSizePixel = 0
-    Corner(card)
-    Stroke(card, Color3.fromRGB(0, 191, 255), 1)
-    RegTheme(card, "Primary")
+-- Nút Thu Gọn/Mở Rộng "Tự Động Trộm Trứng"
+local farmToggleBtn = Instance.new("TextButton", farmScroll)
+farmToggleBtn.LayoutOrder = 1
+farmToggleBtn.Size, farmToggleBtn.BackgroundColor3 = UDim2.new(1, 0, 0, 32), Color3.fromRGB(55,12,40)
+farmToggleBtn.BackgroundTransparency, farmToggleBtn.Text = 0, " → Tự Động Trộm Trứng"
+farmToggleBtn.TextColor3, farmToggleBtn.TextSize = Color3.fromRGB(255,255,255), 10
+farmToggleBtn.Font, farmToggleBtn.TextXAlignment = Enum.Font.GothamBold, Enum.TextXAlignment.Center
+Corner(farmToggleBtn)
+Stroke(farmToggleBtn)
+RegTheme(farmToggleBtn, "Secondary")
 
-    local tLbl = Instance.new("TextLabel", card)
-    tLbl.Size = UDim2.new(1, -40, 0, 15)
-    tLbl.Position = UDim2.new(0, 6, 0, 1)
-    tLbl.BackgroundTransparency = 1
-    tLbl.Text = titleText
-    tLbl.TextColor3 = Color3.fromRGB(255,255,255)
-    tLbl.TextSize = 8
-    tLbl.Font = Enum.Font.GothamBold
-    tLbl.TextXAlignment = Enum.TextXAlignment.Left
+local farmSubLabel = Instance.new("TextLabel", farmToggleBtn)
+farmSubLabel.Size, farmSubLabel.Position = UDim2.new(1, 0, 0, 14), UDim2.new(0, 0, 1, -14)
+farmSubLabel.BackgroundTransparency, farmSubLabel.Text = 1, "Cài đặt tính năng cướp trứng tự động"
+farmSubLabel.TextColor3, farmSubLabel.TextSize = Color3.fromRGB(140,140,150), 7
+farmSubLabel.Font, farmSubLabel.TextXAlignment = Enum.Font.Gotham, Enum.TextXAlignment.Center
 
-    local sLbl = Instance.new("TextLabel", card)
-    sLbl.Size = UDim2.new(1, -40, 0, 12)
-    sLbl.Position = UDim2.new(0, 6, 0, 16)
-    sLbl.BackgroundTransparency = 1
-    sLbl.Text = subText
-    sLbl.TextColor3 = Color3.fromRGB(150,150,160)
-    sLbl.TextSize = 7
-    sLbl.Font = Enum.Font.Gotham
-    sLbl.TextXAlignment = Enum.TextXAlignment.Left
+local eggStealContainer = Instance.new("Frame", farmScroll)
+eggStealContainer.LayoutOrder = 2
+eggStealContainer.Size, eggStealContainer.AutomaticSize = UDim2.new(1, 0, 0, 0), Enum.AutomaticSize.Y
+eggStealContainer.BackgroundTransparency = 1
+eggStealContainer.Visible = false
+local eggLayout = Instance.new("UIListLayout", eggStealContainer)
+eggLayout.SortOrder, eggLayout.Padding = Enum.SortOrder.LayoutOrder, UDim.new(0, 4)
+eggLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-    local toggleBtn = Instance.new("TextButton", card)
-    toggleBtn.Size = UDim2.new(0, 26, 0, 14)
-    toggleBtn.Position = UDim2.new(1, -30, 0.5, -7)
-    toggleBtn.BackgroundColor3 = Color3.fromRGB(60,65,75)
-    toggleBtn.Text = ""
+Track(farmToggleBtn.MouseButton1Click:Connect(function()
+    eggStealContainer.Visible = not eggStealContainer.Visible
+    farmToggleBtn.Text = eggStealContainer.Visible and " ↓ Tự Động Trộm Trứng" or " → Tự Động Trộm Trứng"
+    farmSubLabel.Visible = eggStealContainer.Visible
+end))
+
+-- Hàm tạo Toggle UI trong tab Farm
+local function CreateFarmToggle(parent, order, titleText, stateKey, callback)
+    local toggleFrame = Instance.new("Frame", parent)
+    toggleFrame.LayoutOrder, toggleFrame.Size = order, UDim2.new(1, 0, 0, 30)
+    toggleFrame.BackgroundColor3, toggleFrame.BackgroundTransparency = Color3.fromRGB(70,15,50), 0
+    Corner(toggleFrame)
+    Stroke(toggleFrame)
+    RegTheme(toggleFrame, "Primary")
+
+    local tLabel = Instance.new("TextLabel", toggleFrame)
+    tLabel.Size, tLabel.Position = UDim2.new(1, -40, 1, 0), UDim2.new(0, 5, 0, 0)
+    tLabel.BackgroundTransparency, tLabel.Text = 1, titleText
+    tLabel.TextColor3, tLabel.TextSize = Color3.fromRGB(255,255,255), 9
+    tLabel.Font, tLabel.TextXAlignment = Enum.Font.GothamBold, Enum.TextXAlignment.Left
+
+    local toggleBtn = Instance.new("TextButton", toggleFrame)
+    toggleBtn.Size, toggleBtn.Position = UDim2.new(0, 30, 0, 15), UDim2.new(1, -34, 0.5, -7.5)
+    toggleBtn.BackgroundColor3, toggleBtn.Text = State[stateKey] and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(60, 65, 75), ""
     Corner(toggleBtn, UDim.new(1, 0))
     Stroke(toggleBtn)
 
     local dot = Instance.new("Frame", toggleBtn)
-    dot.Size = UDim2.new(0, 10, 0, 10)
-    dot.Position = UDim2.new(0, 2, 0.5, -5)
+    dot.Size, dot.Position = UDim2.new(0, 11, 0, 11), State[stateKey] and UDim2.new(1, -13, 0.5, -5.5) or UDim2.new(0, 2, 0.5, -5.5)
     dot.BackgroundColor3 = Color3.fromRGB(255,255,255)
     Corner(dot, UDim.new(1, 0))
 
-    local active = false
     Track(toggleBtn.MouseButton1Click:Connect(function()
-        active = not active
-        if active then
-            toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            dot.Position = UDim2.new(1, -12, 0.5, -5)
-        else
-            toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 65, 75)
-            dot.Position = UDim2.new(0, 2, 0.5, -5)
-        end
-        if callback then pcall(callback, active) end
+        State[stateKey] = not State[stateKey]
+        local active = State[stateKey]
+        toggleBtn.BackgroundColor3 = active and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(60, 65, 75)
+        dot.Position = active and UDim2.new(1, -13, 0.5, -5.5) or UDim2.new(0, 2, 0.5, -5.5)
+        if callback then callback(active) end
     end))
 end
 
-CreateFarmToggle(farmScroll, 1, "⚡ Auto Train Treadmill", "Tự động chạy máy tập tăng tốc độ", function(v)
-    print("[Farm] Auto Train Treadmill:", v)
+-- Hàm tạo Slider UI trong tab Farm
+local function CreateFarmSlider(parent, order, titleText, minVal, maxVal, defaultVal, stateKey, unitStr, callback)
+    local sFrame = Instance.new("Frame", parent)
+    sFrame.LayoutOrder, sFrame.Size = order, UDim2.new(1, 0, 0, 34)
+    sFrame.BackgroundColor3, sFrame.BackgroundTransparency = Color3.fromRGB(70,15,50), 0
+    Corner(sFrame)
+    Stroke(sFrame)
+    RegTheme(sFrame, "Primary")
+
+    local titleLbl = Instance.new("TextLabel", sFrame)
+    titleLbl.Size, titleLbl.Position = UDim2.new(1, -8, 0, 15), UDim2.new(0, 5, 0, 2)
+    titleLbl.BackgroundTransparency, titleLbl.Text = 1, titleText
+    titleLbl.TextColor3, titleLbl.TextSize = Color3.fromRGB(255,255,255), 9
+    titleLbl.Font, titleLbl.TextXAlignment = Enum.Font.GothamBold, Enum.TextXAlignment.Left
+
+    local valLbl = Instance.new("TextLabel", sFrame)
+    valLbl.Size, valLbl.Position = UDim2.new(0, 60, 0, 15), UDim2.new(1, -65, 0, 2)
+    valLbl.BackgroundTransparency, valLbl.Text = 1, tostring(defaultVal) .. (unitStr or "")
+    valLbl.TextColor3, valLbl.TextSize = Color3.fromRGB(0,191,255), 9
+    valLbl.Font, valLbl.TextXAlignment = Enum.Font.TextXAlignment.Right
+
+    local barBg = Instance.new("Frame", sFrame)
+    barBg.Size, barBg.Position = UDim2.new(1, -16, 0, 8), UDim2.new(0, 8, 0, 21)
+    barBg.BackgroundColor3 = Color3.fromRGB(90,25,65)
+    Corner(barBg, UDim.new(1, 0))
+    Stroke(barBg)
+
+    local initPercent = math.clamp((defaultVal - minVal) / (maxVal - minVal), 0, 1)
+    local barFill = Instance.new("Frame", barBg)
+    barFill.Size, barFill.BackgroundColor3 = UDim2.new(initPercent, 0, 1, 0), Color3.fromRGB(0,180,255)
+    Corner(barFill, UDim.new(1, 0))
+
+    local barBtn = Instance.new("TextButton", barBg)
+    barBtn.Size, barBtn.BackgroundTransparency, barBtn.Text = UDim2.new(1, 10, 1, 10), 1, ""
+
+    local adjusting = false
+    Track(barBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            adjusting = true
+        end
+    end))
+    Track(UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            adjusting = false
+        end
+    end))
+    Track(UserInputService.InputChanged:Connect(function(input)
+        if adjusting and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local absPos, absSize = barBg.AbsolutePosition.X, barBg.AbsoluteSize.X
+            local p = math.clamp((input.Position.X - absPos) / absSize, 0, 1)
+            barFill.Size = UDim2.new(p, 0, 1, 0)
+            local currentVal = math.floor(minVal + (p * (maxVal - minVal)))
+            State[stateKey] = currentVal
+            valLbl.Text = tostring(currentVal) .. (unitStr or "")
+            if callback then callback(currentVal) end
+        end
+    end))
+end
+
+-- Hàm tạo Dropdown UI trong tab Farm
+local function CreateFarmDropdown(parent, order, titleText, options, defaultOption, stateKey, callback)
+    local dropHolder = Instance.new("Frame", parent)
+    dropHolder.LayoutOrder, dropHolder.Size = order, UDim2.new(1, 0, 0, 26)
+    dropHolder.BackgroundColor3, dropHolder.BackgroundTransparency = Color3.fromRGB(70,15,50), 0
+    Corner(dropHolder)
+    Stroke(dropHolder)
+    RegTheme(dropHolder, "Primary")
+
+    local dropBtn = Instance.new("TextButton", dropHolder)
+    dropBtn.Size, dropBtn.BackgroundTransparency = UDim2.new(1, 0, 1, 0), 1
+    dropBtn.Text = " " .. titleText .. ": " .. defaultOption .. " ∨"
+    dropBtn.TextColor3, dropBtn.TextSize = Color3.fromRGB(255,255,255), 9
+    dropBtn.Font, dropBtn.TextXAlignment = Enum.Font.Gotham, Enum.TextXAlignment.Left
+
+    local dropListFrame = Instance.new("ScrollingFrame", parent)
+    dropListFrame.LayoutOrder = order + 1
+    dropListFrame.Size = UDim2.new(1, 0, 0, math.min(#options * 24, 100))
+    dropListFrame.BackgroundColor3, dropListFrame.BackgroundTransparency = Color3.fromRGB(80,20,60), 0
+    dropListFrame.CanvasSize, dropListFrame.ScrollBarThickness, dropListFrame.Visible = UDim2.new(0,0,0,#options * 25), 3, false
+    Corner(dropListFrame)
+    Stroke(dropListFrame)
+    local dListLayout = Instance.new("UIListLayout", dropListFrame)
+    dListLayout.Padding = UDim.new(0, 3)
+    RegTheme(dropListFrame, "DropFrame")
+
+    for i, opt in ipairs(options) do
+        local optBtn = Instance.new("TextButton", dropListFrame)
+        optBtn.LayoutOrder, optBtn.Size = i, UDim2.new(1, 0, 0, 22)
+        optBtn.BackgroundColor3, optBtn.BackgroundTransparency = Color3.fromRGB(90,25,65), 0
+        optBtn.Text, optBtn.TextColor3, optBtn.TextSize = " " .. opt, Color3.fromRGB(255,255,255), 9
+        optBtn.Font, optBtn.TextXAlignment = Enum.Font.Gotham, Enum.TextXAlignment.Left
+        Corner(optBtn, UDim.new(0, 4))
+        Stroke(optBtn)
+        RegTheme(optBtn, "DropItem")
+        Track(optBtn.MouseButton1Click:Connect(function()
+            State[stateKey] = opt
+            dropBtn.Text = " " .. titleText .. ": " .. opt .. " ∨"
+            dropListFrame.Visible = false
+            if callback then callback(opt) end
+        end))
+    end
+
+    Track(dropBtn.MouseButton1Click:Connect(function()
+        dropListFrame.Visible = not dropListFrame.Visible
+    end))
+end
+
+-- 📌 Thêm tất cả các tính năng trộm trứng theo yêu cầu vào eggStealContainer
+CreateFarmToggle(eggStealContainer, 1, "Tự Động Cướp Trứng", "AutoStealEggs", function(val)
+    print("[VzNam Hub] AutoStealEggs:", val)
 end)
 
-CreateFarmToggle(farmScroll, 2, "🥚 Auto Steal Eggs", "Tự động trộm trứng từ tổ", function(v)
-    print("[Farm] Auto Steal Eggs:", v)
+CreateFarmToggle(eggStealContainer, 2, "Cướp Siêu Tốc", "SuperSteal", function(val)
+    print("[VzNam Hub] SuperSteal:", val)
 end)
 
-CreateFarmToggle(farmScroll, 3, "🚀 Instant Steal", "Trộm trứng siêu tốc / lập tức", function(v)
-    print("[Farm] Instant Steal:", v)
+CreateFarmSlider(eggStealContainer, 3, "Số Bước Cướp Siêu Tốc", 1, 10, 2, "SuperStealSteps", "", function(val)
+    print("[VzNam Hub] SuperStealSteps:", val)
 end)
 
-CreateFarmToggle(farmScroll, 4, "🐣 Auto Hatch Eggs", "Tự động ấp trứng trong lồng", function(v)
-    print("[Farm] Auto Hatch Eggs:", v)
+CreateFarmToggle(eggStealContainer, 4, "Fast Delivery", "FastDelivery", function(val)
+    print("[VzNam Hub] FastDelivery:", val)
 end)
 
-CreateFarmToggle(farmScroll, 5, "💰 Auto Sell Pets", "Tự động bán pet giá trị thấp", function(v)
-    print("[Farm] Auto Sell Pets:", v)
+CreateFarmToggle(eggStealContainer, 5, "Cướp Siêu Tốc V2", "SuperStealV2", function(val)
+    print("[VzNam Hub] SuperStealV2:", val)
 end)
+
+CreateFarmDropdown(eggStealContainer, 6, "Khu Vực Mục Tiêu", {"Tất cả", "Khu 1", "Khu 2", "Khu 3", "12 đã chọn"}, "12 đã chọn", "TargetArea", function(val)
+    print("[VzNam Hub] TargetArea:", val)
+end)
+
+CreateFarmDropdown(eggStealContainer, 7, "Min Rarity", {"Tất cả", "Common", "Rare", "Epic", "Legendary", "Mythic"}, "Tất cả", "MinRarity", function(val)
+    print("[VzNam Hub] MinRarity:", val)
+end)
+
+CreateFarmToggle(eggStealContainer, 8, "Giá Trị Cướp Min", "MinEggValue", function(val)
+    print("[VzNam Hub] MinEggValue:", val)
+end)
+
+CreateFarmDropdown(eggStealContainer, 9, "Mục Tiêu Trứng Chỉ Định", {"Tất cả", "Trứng Vàng", "Trứng Kim Cương", "Trứng Rồng"}, "Tất cả", "TargetEgg", function(val)
+    print("[VzNam Hub] TargetEgg:", val)
+end)
+
+CreateFarmToggle(eggStealContainer, 10, "Cướp Trứng Lab Còn Thiếu", "StealMissingLabEggs", function(val)
+    print("[VzNam Hub] StealMissingLabEggs:", val)
+end)
+
+CreateFarmToggle(eggStealContainer, 11, "Cướp Trứng Sách Còn Thiếu", "StealMissingBookEggs", function(val)
+    print("[VzNam Hub] StealMissingBookEggs:", val)
+end)
+
+CreateFarmDropdown(eggStealContainer, 12, "Ưu Tiên Cướp", {"Giá trị cao nhất", "Độ hiếm cao nhất", "Gần nhất", "Ngẫu nhiên"}, "Giá trị cao nhất", "StealPriority", function(val)
+    print("[VzNam Hub] StealPriority:", val)
+end)
+
+CreateFarmSlider(eggStealContainer, 13, "Tốc Độ Bay (Tween)", 50, 300, 120, "TweenFlySpeed", "%", function(val)
+    print("[VzNam Hub] TweenFlySpeed:", val)
+end)
+
+CreateFarmSlider(eggStealContainer, 14, "Tốc Độ Bê Trứng", 50, 200, 100, "EggCarrySpeed", "%", function(val)
+    print("[VzNam Hub] EggCarrySpeed:", val)
+end)
+
+CreateFarmToggle(eggStealContainer, 15, "Drop Eggs At Safe Zone", "DropEggsSafeZone", function(val)
+    print("[VzNam Hub] DropEggsSafeZone:", val)
+end)
+
+CreateFarmToggle(eggStealContainer, 16, "Bảng Chống Vệ Sĩ", "AntiGuardPanel", function(val)
+    print("[VzNam Hub] AntiGuardPanel:", val)
+end)
+
 
 -- ═════════════════ TAB: MISC ═════════════════
 local tabMiscBtn = Instance.new("TextButton", SidebarScroll)
@@ -1021,7 +1200,6 @@ local colorList = {
     {Name = "🔴 Đỏ Đậm",            Color = Color3.fromRGB(220, 20, 60)},
     {Name = "❌ Không Viền",        Color = "None"},
 }
-local selectedColorObj = colorList[1]
 
 local colorDropBtn = Instance.new("TextButton", menuColorContainer)
 colorDropBtn.LayoutOrder, colorDropBtn.Size = 4, UDim2.new(1, 0, 0, 26)
@@ -1068,7 +1246,6 @@ for i, cItem in ipairs(colorList) do
     Stroke(cBtn)
     RegTheme(cBtn, "DropItem")
     Track(cBtn.MouseButton1Click:Connect(function()
-        selectedColorObj = cItem
         colorDropBtn.Text = " 🎨 Viền: " .. cItem.Name
         colorDropFrame.Visible = false
         if cItem.Color == "Rainbow" then
@@ -1500,4 +1677,4 @@ ApplyTheme(Color3.fromRGB(15, 16, 22))
 UpdateAllStrokes(Color3.fromRGB(0, 191, 255))
 RefreshStartupLabel()
 
-print("[VzNam Hub-Main] ✅ Loaded. Config folder: " .. CONFIG_FOLDER)
+print("[VzNam Hub-Main] ✅ Loaded successfully with Farm Egg Steal features.")
